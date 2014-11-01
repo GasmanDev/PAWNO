@@ -1,8 +1,45 @@
 #include <a_samp>
 #include <vehicledata>
 ///var
-new PlayerText:VSpeed[7];
+new PlayerText:VSpeed[11];
 new VSpeedTimer[MAX_PLAYERS];
+//vehicle name
+new VehicleNames[][] =
+{
+    "Landstalker", "Bravura", "Buffalo", "Linerunner", "Perrenial", "Sentinel",
+    "Dumper", "Firetruck", "Trashmaster", "Stretch", "Manana", "Infernus",
+    "Voodoo", "Pony", "Mule", "Cheetah", "Ambulance", "Leviathan", "Moonbeam",
+    "Esperanto", "Taxi", "Washington", "Bobcat", "Whoopee", "BF Injection",
+    "Hunter", "Premier", "Enforcer", "Securicar", "Banshee", "Predator", "Bus",
+    "Rhino", "Barracks", "Hotknife", "Trailer", "Previon", "Coach", "Cabbie",
+    "Stallion", "Rumpo", "RC Bandit", "Romero", "Packer", "Monster", "Admiral",
+    "Squalo", "Seasparrow", "Pizzaboy", "Tram", "Trailer", "Turismo", "Speeder",
+    "Reefer", "Tropic", "Flatbed", "Yankee", "Caddy", "Solair", "Berkley's RC Van",
+    "Skimmer", "PCJ-600", "Faggio", "Freeway", "RC Baron", "RC Raider", "Glendale",
+    "Oceanic","Sanchez", "Sparrow", "Patriot", "Quad", "Coastguard", "Dinghy",
+    "Hermes", "Sabre", "Rustler", "ZR-350", "Walton", "Regina", "Comet", "BMX",
+    "Burrito", "Camper", "Marquis", "Baggage", "Dozer", "Maverick", "News Chopper",
+    "Rancher", "FBI Rancher", "Virgo", "Greenwood", "Jetmax", "Hotring", "Sandking",
+    "Blista Compact", "Police Maverick", "Boxville", "Benson", "Mesa", "RC Goblin",
+    "Hotring Racer A", "Hotring Racer B", "Bloodring Banger", "Rancher", "Super GT",
+    "Elegant", "Journey", "Bike", "Mountain Bike", "Beagle", "Cropduster", "Stunt",
+    "Tanker", "Roadtrain", "Nebula", "Majestic", "Buccaneer", "Shamal", "Hydra",
+    "FCR-900", "NRG-500", "HPV1000", "Cement Truck", "Tow Truck", "Fortune",
+    "Cadrona", "FBI Truck", "Willard", "Forklift", "Tractor", "Combine", "Feltzer",
+    "Remington", "Slamvan", "Blade", "Freight", "Streak", "Vortex", "Vincent",
+    "Bullet", "Clover", "Sadler", "Firetruck", "Hustler", "Intruder", "Primo",
+    "Cargobob", "Tampa", "Sunrise", "Merit", "Utility", "Nevada", "Yosemite",
+    "Windsor", "Monster", "Monster", "Uranus", "Jester", "Sultan", "Stratium",
+    "Elegy", "Raindance", "RC Tiger", "Flash", "Tahoma", "Savanna", "Bandito",
+    "Freight Flat", "Streak Carriage", "Kart", "Mower", "Dune", "Sweeper",
+    "Broadway", "Tornado", "AT-400", "DFT-30", "Huntley", "Stafford", "BF-400",
+    "News Van", "Tug", "Trailer", "Emperor", "Wayfarer", "Euros", "Hotdog", "Club",
+    "Freight Box", "Trailer", "Andromada", "Dodo", "RC Cam", "Launch", "Police Car",
+    "Police Car", "Police Car", "Police Ranger", "Picador", "S.W.A.T", "Alpha",
+    "Phoenix", "Glendale", "Sadler", "Luggage", "Luggage", "Stairs", "Boxville",
+    "Tiller", "Utility Trailer"
+};
+
 //forwrad
 forward VSpeedUpdate(playerid);
 ////////////////////////////////
@@ -37,7 +74,7 @@ public OnPlayerStateChange(playerid, newstate, oldstate)
 }
 public VSpeedUpdate(playerid)
 {
-	new string[128];
+	new string[128],Float:vhp;
 	format(string,sizeof(string),"%d Km/h",GetVehicleSpeed(GetPlayerVehicleID(playerid)));
 	PlayerTextDrawSetString(playerid,VSpeed[4],string);
 	PlayerTextDrawShow(playerid,VSpeed[4]);
@@ -47,15 +84,19 @@ public VSpeedUpdate(playerid)
 	{
 	PlayerTextDrawTextSize(playerid,VSpeed[3],604.0, 0.000000);
 	}
+	GetVehicleHealth(GetPlayerVehicleID(playerid),vhp);
+	format(string,sizeof(string),"Vehicle Health:%0.1f",vhp);
+	PlayerTextDrawSetString(playerid,VSpeed[6],string);
 	PlayerTextDrawShow(playerid,VSpeed[3]);
+	PlayerTextDrawShow(playerid,VSpeed[6]);
 	return 1;
 }
 public OnPlayerConnect(playerid)
 {
-	VSpeed[0] = CreatePlayerTextDraw(playerid,500.000000, 400.000000, "_");
+	VSpeed[0] = CreatePlayerTextDraw(playerid,500.000000, 358.000000, "_");
 	PlayerTextDrawBackgroundColor(playerid,VSpeed[0], 255);
 	PlayerTextDrawFont(playerid,VSpeed[0], 1);
-	PlayerTextDrawLetterSize(playerid,VSpeed[0], 0.500000, 3.699997);
+	PlayerTextDrawLetterSize(playerid,VSpeed[0], 0.500000, 8.399997);
 	PlayerTextDrawColor(playerid,VSpeed[0], -1);
 	PlayerTextDrawSetOutline(playerid,VSpeed[0], 0);
 	PlayerTextDrawSetProportional(playerid,VSpeed[0], 1);
@@ -68,7 +109,7 @@ public OnPlayerConnect(playerid)
 	VSpeed[1] = CreatePlayerTextDraw(playerid,501.000000, 429.000000, "_");
 	PlayerTextDrawBackgroundColor(playerid,VSpeed[1], 255);
 	PlayerTextDrawFont(playerid,VSpeed[1], 1);
-	PlayerTextDrawLetterSize(playerid,VSpeed[1], 0.500000, 0.299999);
+	PlayerTextDrawLetterSize(playerid,VSpeed[1], 0.500000, 0.399998);
 	PlayerTextDrawColor(playerid,VSpeed[1], -1);
 	PlayerTextDrawSetOutline(playerid,VSpeed[1], 0);
 	PlayerTextDrawSetProportional(playerid,VSpeed[1], 1);
@@ -81,7 +122,7 @@ public OnPlayerConnect(playerid)
 	VSpeed[2] = CreatePlayerTextDraw(playerid,501.000000, 401.000000, "_");
 	PlayerTextDrawBackgroundColor(playerid,VSpeed[2], 255);
 	PlayerTextDrawFont(playerid,VSpeed[2], 1);
-	PlayerTextDrawLetterSize(playerid,VSpeed[2], 0.500000, -0.000000);
+	PlayerTextDrawLetterSize(playerid,VSpeed[2], 0.500000, 0.000000);
 	PlayerTextDrawColor(playerid,VSpeed[2], -1);
 	PlayerTextDrawSetOutline(playerid,VSpeed[2], 0);
 	PlayerTextDrawSetProportional(playerid,VSpeed[2], 1);
@@ -94,13 +135,13 @@ public OnPlayerConnect(playerid)
 	VSpeed[3] = CreatePlayerTextDraw(playerid,501.000000, 407.000000, "_");
 	PlayerTextDrawBackgroundColor(playerid,VSpeed[3], 16711935);
 	PlayerTextDrawFont(playerid,VSpeed[3], 1);
-	PlayerTextDrawLetterSize(playerid,VSpeed[3], 0.500000, 1.799999);
+	PlayerTextDrawLetterSize(playerid,VSpeed[3], 0.500000, 1.799998);
 	PlayerTextDrawColor(playerid,VSpeed[3], -1);
 	PlayerTextDrawSetOutline(playerid,VSpeed[3], 1);
 	PlayerTextDrawSetProportional(playerid,VSpeed[3], 1);
 	PlayerTextDrawUseBox(playerid,VSpeed[3], 1);
 	PlayerTextDrawBoxColor(playerid,VSpeed[3], 16711935);
-	PlayerTextDrawTextSize(playerid,VSpeed[3], 498.000000, 0.000000);
+	PlayerTextDrawTextSize(playerid,VSpeed[3], 604.000000, 0.000000);
 	PlayerTextDrawSetSelectable(playerid,VSpeed[3], 0);
 
 	VSpeed[4] = CreatePlayerTextDraw(playerid,528.000000, 410.000000, "0 Km/H");
@@ -115,22 +156,65 @@ public OnPlayerConnect(playerid)
 	VSpeed[5] = CreatePlayerTextDraw(playerid,528.000000, 427.000000, "V-Speedo");
 	PlayerTextDrawBackgroundColor(playerid,VSpeed[5], 16711935);
 	PlayerTextDrawFont(playerid,VSpeed[5], 2);
-	PlayerTextDrawLetterSize(playerid,VSpeed[5], 0.240000, 0.799999);
+	PlayerTextDrawLetterSize(playerid,VSpeed[5], 0.239999, 0.799998);
 	PlayerTextDrawColor(playerid,VSpeed[5], 170);
 	PlayerTextDrawSetOutline(playerid,VSpeed[5], 0);
 	PlayerTextDrawSetProportional(playerid,VSpeed[5], 1);
 	PlayerTextDrawSetShadow(playerid,VSpeed[5], 1);
 	PlayerTextDrawSetSelectable(playerid,VSpeed[5], 0);
 
-	VSpeed[6] = CreatePlayerTextDraw(playerid,498.000000, 387.000000, "sa-mp.com");
+	VSpeed[6] = CreatePlayerTextDraw(playerid,500.000000, 386.000000, "Vehicle Health:1000");
 	PlayerTextDrawBackgroundColor(playerid,VSpeed[6], 0);
-	PlayerTextDrawFont(playerid,VSpeed[6], 0);
-	PlayerTextDrawLetterSize(playerid,VSpeed[6], 0.500000, 1.000000);
-	PlayerTextDrawColor(playerid,VSpeed[6], 170);
+	PlayerTextDrawFont(playerid,VSpeed[6], 2);
+	PlayerTextDrawLetterSize(playerid,VSpeed[6], 0.170000, 1.000000);
+	PlayerTextDrawColor(playerid,VSpeed[6], 16711935);
 	PlayerTextDrawSetOutline(playerid,VSpeed[6], 0);
 	PlayerTextDrawSetProportional(playerid,VSpeed[6], 1);
 	PlayerTextDrawSetShadow(playerid,VSpeed[6], 1);
 	PlayerTextDrawSetSelectable(playerid,VSpeed[6], 0);
+
+	VSpeed[7] = CreatePlayerTextDraw(playerid,500.000000, 361.000000, "");
+	PlayerTextDrawBackgroundColor(playerid,VSpeed[7], 0);
+	PlayerTextDrawFont(playerid,VSpeed[7], 2);
+	PlayerTextDrawLetterSize(playerid,VSpeed[7], 0.170000, 1.000000);
+	PlayerTextDrawColor(playerid,VSpeed[7], 16711935);
+	PlayerTextDrawSetOutline(playerid,VSpeed[7], 0);
+	PlayerTextDrawSetProportional(playerid,VSpeed[7], 1);
+	PlayerTextDrawSetShadow(playerid,VSpeed[7], 1);
+	PlayerTextDrawSetSelectable(playerid,VSpeed[7], 0);
+
+	VSpeed[8] = CreatePlayerTextDraw(playerid,500.000000, 377.000000, "TopSpeed:");
+	PlayerTextDrawBackgroundColor(playerid,VSpeed[8], 0);
+	PlayerTextDrawFont(playerid,VSpeed[8], 2);
+	PlayerTextDrawLetterSize(playerid,VSpeed[8], 0.160000, 1.000000);
+	PlayerTextDrawColor(playerid,VSpeed[8], 16711935);
+	PlayerTextDrawSetOutline(playerid,VSpeed[8], 0);
+	PlayerTextDrawSetProportional(playerid,VSpeed[8], 1);
+	PlayerTextDrawSetShadow(playerid,VSpeed[8], 1);
+	PlayerTextDrawSetSelectable(playerid,VSpeed[8], 0);
+
+	VSpeed[9] = CreatePlayerTextDraw(playerid,500.000000, 369.000000, "Fuel:100");
+	PlayerTextDrawBackgroundColor(playerid,VSpeed[9], 0);
+	PlayerTextDrawFont(playerid,VSpeed[9], 2);
+	PlayerTextDrawLetterSize(playerid,VSpeed[9], 0.170000, 1.000000);
+	PlayerTextDrawColor(playerid,VSpeed[9], 16711935);
+	PlayerTextDrawSetOutline(playerid,VSpeed[9], 0);
+	PlayerTextDrawSetProportional(playerid,VSpeed[9], 1);
+	PlayerTextDrawSetShadow(playerid,VSpeed[9], 1);
+	PlayerTextDrawSetSelectable(playerid,VSpeed[9], 0);
+
+	VSpeed[10] = CreatePlayerTextDraw(playerid,501.000000, 359.000000, "_");
+	PlayerTextDrawBackgroundColor(playerid,VSpeed[10], 255);
+	PlayerTextDrawFont(playerid,VSpeed[10], 1);
+	PlayerTextDrawLetterSize(playerid,VSpeed[10], 0.500000, 0.000000);
+	PlayerTextDrawColor(playerid,VSpeed[10], -1);
+	PlayerTextDrawSetOutline(playerid,VSpeed[10], 0);
+	PlayerTextDrawSetProportional(playerid,VSpeed[10], 1);
+	PlayerTextDrawSetShadow(playerid,VSpeed[10], 1);
+	PlayerTextDrawUseBox(playerid,VSpeed[10], 1);
+	PlayerTextDrawBoxColor(playerid,VSpeed[10], 16711935);
+	PlayerTextDrawTextSize(playerid,VSpeed[10], 604.000000, -2.000000);
+	PlayerTextDrawSetSelectable(playerid,VSpeed[10], 0);
 	return 1;
 }
 ///////STOCK
@@ -149,7 +233,12 @@ stock GetVehicleSpeed( vehicleid )
 }
 stock ShowVSpeed(playerid)
 {
-	for(new i =0;i<7;i++)
+	new string[128];
+	format(string,sizeof(string),"%s",GetVehicleName(GetPlayerVehicleID(playerid)));
+	PlayerTextDrawSetString(playerid,VSpeed[7],string);
+	format(string,sizeof(string),"TopSpeed:%d Km/h",GetVehicleTopSpeed(GetPlayerVehicleID(playerid)));
+	PlayerTextDrawSetString(playerid,VSpeed[8],string);
+	for(new i =0;i<11;i++)
 	{
 	PlayerTextDrawShow(playerid,VSpeed[i]);
 	}
@@ -160,10 +249,17 @@ stock HideVSpeed(playerid)
 {
     PlayerTextDrawSetString(playerid,VSpeed[4],"0 Km/h");
     PlayerTextDrawTextSize(playerid,VSpeed[3], 498.000000, 0.000000);
-    for(new i =0;i<7;i++)
+    for(new i =0;i<11;i++)
 	{
 	PlayerTextDrawHide(playerid,VSpeed[i]);
 	}
 	KillTimer(VSpeedTimer[playerid]);
 	return 1;
+}
+
+stock GetVehicleName(vehicleid)
+{
+	new String[128];
+    format(String,sizeof(String),"%s",VehicleNames[GetVehicleModel(vehicleid) - 400]);
+    return String;
 }
