@@ -1,6 +1,3 @@
-/*
-  V Speedo by VinPure
-*/
 #include <a_samp>
 #include <vehicledata>
 ///var
@@ -46,6 +43,10 @@ public VSpeedUpdate(playerid)
 	PlayerTextDrawShow(playerid,VSpeed[4]);
 	new Float:speed = (GetVehicleSpeed(GetPlayerVehicleID(playerid))*106)/GetVehicleTopSpeed(GetPlayerVehicleID(playerid));
 	PlayerTextDrawTextSize(playerid,VSpeed[3],speed+498, 0.000000);
+	if(speed+498 > 604)
+	{
+	PlayerTextDrawTextSize(playerid,VSpeed[3],604.0, 0.000000);
+	}
 	PlayerTextDrawShow(playerid,VSpeed[3]);
 	return 1;
 }
