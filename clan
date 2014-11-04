@@ -1,0 +1,809 @@
+#if defined _clan_included
+        #endinput
+#endif
+#define _clan_included
+
+#define CLAN_PASS_DIALOG	1342
+#define MAX_PASS_FAILS		3
+#define MAX_CLAN_RANKS      6
+new bool:use_tags, bool:use_pass;
+new Warnings[MAX_PLAYERS];
+new DB: Clan_Database;
+/////forward
+forward OnPlayerClanCreate(playerid, clan_name[]);
+
+forward OnPlayerAddPlayerToClan(playerid, addid, clan_name[]);
+forward OnPlayerAddToClan(addid,clan_name[]);
+
+forward OnPlayerRemovePlayerFromClan(playerid, removeid, clan_name[]);
+forward OnPlayerRemoveFromClan(removeid,clan_name[]);
+
+forward OnPlayerLeaveClan(playerid, clan_name[]);
+
+forward OnPlayerDisbandClan(playerid, clan_name[]);
+forward OnDisbandClan(clan_name[]);
+
+forward OnPlayerChangeClanMOTD(playerid, new_motd[]);
+forward OnClanChangeMOTD(clan_name[], new_motd[]);
+
+forward OnPlayerChangeClanDescription(playerid, new_description[]);
+forward OnClanChangeDescription(clan_name[], new_description[]);
+
+forward OnPlayerChangeClanPassword(playerid, new_pass[]);
+forward OnClanChangePassword(clan_name[], new_pass[]);
+
+forward OnPlayerChangeClanTag(playerid, new_tag[]);
+forward OnClanChangeTag(clan_name[], new_tag[]);
+
+forward OnPlayerChangePlayerRank(playerid, giveid, new_rank);
+forward OnClanChangePlayerRank(clan_name[], giveid, new_rank);
+
+forward OnPlayerChangeClanRankName(playerid,rank,newname[]);
+forward OnClanChangeRankName(clan_name[],rank,newname[]);
+/*Natives:
+native CreateClan(playerid, clan_name[], clan_tag[], clan_pass[], clan_description[], clan_motd[],rank0[],rank1[],rank2[],rank3[],rank4[],rank5[],rank6[]);
+
+native PlayerAddPlayerToClan(playerid, addid);
+native AddPlayerToClan(addid,clan_name[]);
+
+native PlayerRemovePlayerFromClan(playerid, removeid);
+native RemovePlayerFromClan(removeid,clan_name[]);
+
+native LeaveClan(playerid);
+
+native PlayerDisbandClan(playerid);
+native DisbandClan(playerid);
+
+native PlayerChangePlayerClanRank(playerid, giveid, rank);
+native ChangePlayerClanRank(clan_name[],playerid,rank);
+
+native PlayerChangeClanRankName(playerid,rank,newname[]);
+native ChangeClanRankName(clan_name[],rank,newname[]);
+
+native PlayerChangeClanMOTD(playerid, new_motd[]);
+native ChangeClanMOTD(clan_name[],new_motd[]);
+
+native PlayerChangeClanDescription(playerid, new_description[]);
+native ChangeClanDescription(clan_name[], new_description[]);
+
+native PlayerChangeClanPassword(playerid, new_pass[]);
+native ChangeClanPassword(clan_name[], new_pass[]);
+
+native PlayerChangeClanTag(playerid, new_tag[]);
+native ChangeClanTag(clan_name[], new_tag[]);
+
+native IsPlayerAnyClanMember(playerid);
+native IsPlayerClanMember(playerid, clan_name[]);
+native GetPlayerClan(playerid);
+native GetPlayerClanRank(playerid);
+native GetPlayerClanRankName(playerid);
+native GetClanMOTD(clan[]);
+native GetClanDescription(clan[]);
+native GetClanMembers(clan[]);
+native GetClanTag(clan[]);
+native GetClanPassword(clan[]);
+native UseClanTags(bool:use = true);
+native UseClanPasswords(bool:use = true);
+native SendMessageToClanMembers(playerid, color, msg[]);
+native SendMessageToClanMembersEx(clan[], color, msg[]);
+*/
+forward CLAN_OnFilterScriptInit();
+public OnFilterScriptInit()
+{
+	Clan_Database = db_open("Clans.db");
+	db_query(Clan_Database,"CREATE TABLE IF NOT EXISTS clans(clanname VARCHAR(30),\
+ 	clantag VARCHAR(5),\
+ 	clanpass VARCHAR(10),\
+ 	clandes VARCHAR(100),\
+ 	clanmotd VARCHAR(50),\
+ 	clanrank0name VARCHAR(100),\
+ 	clanrank1name VARCHAR(100),\
+ 	clanrank2name VARCHAR(100),\
+ 	clanrank3name VARCHAR(100),\
+ 	clanrank4name VARCHAR(100),\
+ 	clanrank5name VARCHAR(100),\
+ 	clanrank6name VARCHAR(100))");
+	db_query(Clan_Database,"CREATE TABLE IF NOT EXISTS members(clanname VARCHAR(30), playername VARCHAR(30), playerclanrank INTEGER DEFAULT 0 NOT NULL, isinclan INTEGER DEFAULT 0 NOT NULL)");
+ 	if(funcidx("CLAN_OnFilterScriptInit") != -1) CallLocalFunction("CLAN_OnFilterScriptInit", "");
+  	return 1;
+}
+#if defined _ALS_OnFilterScriptInit
+        #undef OnFilterScriptInit
+#else
+        #define _ALS_OnFilterScriptInit
+#endif
+#define OnFilterScriptInit CLAN_OnFilterScriptInit
+
+forward CLAN_OnFilterScriptExit();
+public OnFilterScriptExit()
+{
+    db_close(Clan_Database);
+	if(funcidx("CLAN_OnFilterScriptExit") != -1) CallLocalFunction("CLAN_OnFilterScriptExit", "");
+  	return 1;
+}
+#if defined _ALS_OnFilterScriptExit
+        #undef OnFilterScriptExit
+#else
+        #define _ALS_OnFilterScriptExit
+#endif
+#define OnFilterScriptExit CLAN_OnFilterScriptExit
+
+forward CLAN_OnPlayerConnect(playerid);
+public OnPlayerConnect(playerid)
+{
+	if(use_tags == true)
+	{
+		new name[MAX_PLAYER_NAME];
+		GetPlayerName(playerid, name, sizeof(name));
+		new n_name[MAX_PLAYER_NAME];
+		format(n_name, sizeof(n_name), "[%s] %s", GetClanTag(GetPlayerClan(playerid)), name);
+		SetPlayerName(playerid, n_name);
+	}
+	if(use_pass)
+	{
+		if(IsPlayerAnyClanMember(playerid) == 1)
+		{
+			new cname[128];
+			format(cname, sizeof(cname), "{FFFFFF}Please enter {FF0000}%s{FFFFFF}'s clan password:", GetPlayerClan(playerid));
+			ShowPlayerDialog(playerid, CLAN_PASS_DIALOG, DIALOG_STYLE_INPUT, "{FFFF00}CLAN PASSWORD:", cname, "Proceed", "Quit");
+		}
+	}
+	if(funcidx("CLAN_OnPlayerConnect") != -1) CallLocalFunction("CLAN_OnPlayerConnect", "");
+ 	return 1;
+}
+#if defined _ALS_OnPlayerConnect
+        #undef OnPlayerConnect
+#else
+        #define _ALS_OnPlayerConnect
+#endif
+#define OnPlayerConnect CLAN_OnPlayerConnect
+forward CLAN_OnPlayerSpawn(playerid);
+public OnPlayerSpawn(playerid)
+{
+	if(IsPlayerAnyClanMember(playerid))
+	{
+	    new string[128];
+	    format(string,sizeof(string),"{FF0000}[Clan MOTD]:{00FF40}%s",GetClanMOTD(GetPlayerClan(playerid)));
+	    SendClientMessage(playerid,-1,string);
+	}
+	if(funcidx("CLAN_OnPlayerSpawn") != -1) CallLocalFunction("CLAN_OnPlayerSpawn", "d", playerid);
+ 	return 1;
+}
+#if defined _ALS_OnPlayerSpawn
+        #undef OnPlayerSpawn
+#else
+        #define _ALS_OnPlayerSpawn
+#endif
+#define OnPlayerSpawn CLAN_OnPlayerSpawn
+forward CLAN_OnPlayerText(playerid,text[]);
+public OnPlayerText(playerid, text[])
+{
+	if(text[0] == '$')
+  	{
+  		new str[128], name[24];
+		GetPlayerName(playerid, name, 24);
+		format(str, 128, "{FF0000}[CLAN CHAT][Rank(%d):{00FF40}%s]{03F2FF}%s(%d): {FFFFFF}%s",GetPlayerClanRank(playerid),GetPlayerClanRankName(playerid), name, playerid, text[1]);
+		SendMessageToClanMembers(playerid, -1,str);
+		return 0;
+	}
+	if(funcidx("CLAN_OnPlayerText") != -1) CallLocalFunction("CLAN_OnPlayerText", "ds", playerid,text);
+	return 1;
+}
+#if defined _ALS_OnPlayerText
+        #undef OnPlayerText
+#else
+        #define _ALS_OnPlayerText
+#endif
+#define OnPlayerText CLAN_OnPlayerText
+
+forward CLAN_OnDialogResponse(playerid, dialogid, response, listitem, inputtext[]);
+public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
+{
+	switch(dialogid == CLAN_PASS_DIALOG)
+	{
+	    case 1:
+	    {
+	 		if(!response)
+			{
+				Kick(playerid);
+			}
+	 		else if(response)
+		    {
+				if(strlen(inputtext) < 3 || strlen(inputtext) > 10)
+				{
+					new cname[128];
+					format(cname, sizeof(cname), "{FF002B}ERROR!\n\n{FFFFFF}Password lenght invalid, please try again:");
+					return ShowPlayerDialog(playerid, CLAN_PASS_DIALOG, DIALOG_STYLE_INPUT, "{FFFF00}CLAN PASSWORD:", cname, "Proceed", "Quit");
+				}
+				else
+				{
+					if(strcmp(GetClanPassword(GetPlayerClan(playerid)), inputtext, true, 10) == 0)
+					{
+						SendClientMessage(playerid, -1, "{FFFF00}SERVER: {FFFFFF}Your clan password was {00FF40}valid{FFFFFF}, welcome! :)");
+					}
+					else
+					{
+						Warnings[playerid]++;
+						new cname[128];
+						format(cname, sizeof(cname), "{FF002B}ERROR!\n\n{FFFFFF}Wrong password, please try again:");
+						ShowPlayerDialog(playerid, CLAN_PASS_DIALOG, DIALOG_STYLE_INPUT, "{FFFF00}CLAN PASSWORD:", cname, "Proceed", "Quit");
+
+						if(Warnings[playerid] >= MAX_PASS_FAILS)
+						{
+							SendClientMessage(playerid, -1, "{FFFF00}SERVER: {FFFFFF}You have {FF002B}failed {FFFFFF}to enter correct clan password for too much time! Therefore, you are {FF002B}kicked!");
+							SetTimerEx("DELAY_Kick", 250, false, "d", playerid);
+						}
+					}
+				}
+			}
+		}
+	}
+	if(funcidx("CLAN_OnDialogResponse") != -1) CallLocalFunction("CLAN_OnDialogResponse", "");
+ 	return 1;
+}
+#if defined _ALS_OnDialogResponse
+        #undef OnDialogResponse
+#else
+        #define _ALS_OnDialogResponse
+#endif
+#define OnDialogResponse CLAN_OnDialogResponse
+
+forward DELAY_Kick(playerid);
+public DELAY_Kick(playerid)
+{
+	Kick(playerid);
+	return 1;
+}
+stock CreateClan(playerid, clan_name[], clan_tag[], clan_pass[], clan_description[], clan_motd[],rank0[],rank1[],rank2[],rank3[],rank4[],rank5[],rank6[])
+{
+	if(strlen(clan_pass) < 3 || strlen(clan_pass) > 10) return SendClientMessage(playerid,-1,"{FF0000}ERROR: {FFFFFF}Clan password lenght is {FF0000}invalid{FFFFFF}, please try again!");
+	if(IsPlayerAnyClanMember(playerid) == 0)
+	{
+		CallLocalFunction("OnPlayerClanCreate", "is", playerid, clan_name);
+		new clanquery3[128];
+		new DBResult: Result;
+		format(clanquery3, sizeof(clanquery3), "SELECT clanname FROM clans WHERE clanname = '%s'", Clan_DB_Escape(clan_name));
+		Result = db_query(Clan_Database,clanquery3);
+		new rows = db_num_rows(Result);
+		if(rows >= 1) return SendClientMessage(playerid,-1,"{FF0000}ERROR: {FFFFFF}Clan with that name already exists!");
+		db_free_result(Result);
+		///////////////////////////////////////////
+		new clanquery[300];
+		format(clanquery,sizeof(clanquery),"INSERT INTO clans(clanname, clantag, clanpass, clandes, clanmotd, \
+		clanrank0name, \
+		clanrank1name, \
+		clanrank2name, \
+		clanrank3name, \
+		clanrank4name, \
+		clanrank5name, \
+		clanrank6name) VALUES('%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s')",
+		Clan_DB_Escape(clan_name), clan_tag, clan_pass, clan_description, clan_motd,rank0,rank1,rank2,rank3,rank4,rank5,rank6);
+		db_query(Clan_Database,clanquery);
+		//////////////////////////////
+		new clanquery2[300];
+		format(clanquery2,sizeof(clanquery2),"INSERT INTO members(clanname, playername, playerclanrank, isinclan) VALUES('%s', '%s',6, 1)", Clan_DB_Escape(clan_name), Clan_DB_Escape(Clan_GetName(playerid)));
+		db_query(Clan_Database,clanquery2);
+		/////////////////////////////
+		return 1;
+	}
+	else SendClientMessage(playerid,-1,"{FF0000}ERROR: {FFFFFF}You are already in a clan, you cant create new one!");
+	return 1;
+}
+stock AddPlayerToClan(addid,clan_name[])
+{
+    if(!GetClanIsHave(clan_name)) return 1;
+    if(IsPlayerAnyClanMember(addid)) return 1;
+    new string[128];
+    CallLocalFunction("OnPlayerAddToClan", "is",addid,clan_name);
+    
+    format(clanquery,sizeof(clanquery),"INSERT INTO members(clanname, playername, playerclanrank, isinclan) VALUES('%s', '%s', 1, 1)", Clan_DB_Escape(clan_name), Clan_DB_Escape(Clan_GetName(addid)));
+	db_query(Clan_Database,clanquery);
+	
+	format(string,sizeof(string),"{03F2FF}CLAN MOTD:{00FF40}%s",GetClanMOTD(clan_name));
+	SendClientMessage(playerid,-1,string);
+	format(string,sizeof(string),"{03F2FF}CLAN Description:{00FF40}%s",GetClanDescription(clan_name));
+	SendClientMessage(playerid,-1,string);
+	return 1;
+}
+stock PlayerAddPlayerToClan(playerid, addid)
+{
+	if(GetPlayerClanRank(playerid) >= 5)
+	{
+		if(!IsPlayerAnyClanMember(addid))
+		{
+			CallLocalFunction("OnPlayerAddPlayerToClan", "iis", playerid, addid, GetPlayerClan(playerid));
+			new clanquery[300];
+			new string[128];
+			
+			format(clanquery,sizeof(clanquery),"INSERT INTO members(clanname, playername, playerclanrank, isinclan) VALUES('%s', '%s', 1, 1)", Clan_DB_Escape(GetPlayerClan(playerid)), Clan_DB_Escape(Clan_GetName(addid)));
+			db_query(Clan_Database,clanquery);
+
+			format(string,sizeof(string),"{03F2FF}CLAN MOTD:{00FF40}%s",GetClanMOTD(GetPlayerClan(playerid)));
+			SendClientMessage(playerid,-1,string);
+			format(string,sizeof(string),"{03F2FF}CLAN DESC:{00FF40}%s",GetClanDescription(GetPlayerClan(playerid)));
+			SendClientMessage(playerid,-1,string);
+			return 1;
+		}
+		else SendClientMessage(playerid,-1,"{FF0000}ERROR: {FFFFFF}Player is already in a clan!");
+	}
+	else SendClientMessage(playerid,-1,"{FF0000}ERROR: {FFFFFF}You must be an {00FF40}Officer {FFFFFF}or {00FF40}Clan Leader/Subleader {FFFFFF}to add people to clan!");
+	return 1;
+}
+stock RemovePlayerFromClan(removeid,clan_name[])
+{
+    if(!GetClanIsHave(clan_name)) return 1;
+    if(!IsPlayerAnyClanMember(addid)) return 1;
+    CallLocalFunction("OnPlayerRemoveFromClan", "is",removeid,clan_name);
+    new clanquery[300];
+	format(clanquery, sizeof(clanquery), "DELETE FROM members WHERE playername = '%s'", Clan_DB_Escape(Clan_GetName(removeid)));
+	db_query(Clan_Database,clanquery);
+	return 1;
+}
+stock PlayerRemovePlayerFromClan(playerid, removeid)
+{
+	if(GetPlayerClanRank(playerid) >= 5)
+	{
+		if(IsPlayerClanMember(removeid,GetPlayerClan(playerid)))
+		{
+			CallLocalFunction("OnPlayerRemovePlayerFromClan", "iis", playerid, removeid, GetPlayerClan(playerid));
+			new clanquery[300];
+			format(clanquery, sizeof(clanquery), "DELETE FROM members WHERE playername = '%s'", Clan_DB_Escape(Clan_GetName(removeid)));
+			db_query(Clan_Database,clanquery);
+			return 1;
+		}
+		else SendClientMessage(playerid,-1,"{FF0000}ERROR: {FFFFFF}Player is not in your clan!");
+	}
+	else SendClientMessage(playerid,-1,"{FF0000}ERROR: {FFFFFF}You must be an {00FF40}Officer {FFFFFF}or {00FF40}Clan Leader/Subleader {FFFFFF}to remove people from clan!");
+	return 1;
+}
+
+stock LeaveClan(playerid)
+{
+	if(GetPlayerClanRank(playerid) < 4)
+	{
+		if(IsPlayerAnyClanMember(playerid) == 1)
+		{
+			CallLocalFunction("OnPlayerLeaveClan", "is", playerid, GetPlayerClan(playerid));
+			new clanquery[300];
+			format(clanquery, sizeof(clanquery), "DELETE FROM members WHERE playername = '%s'", Clan_DB_Escape(Clan_GetName(playerid)));
+			db_query(Clan_Database,clanquery);
+		}
+		else SendClientMessage(playerid,-1,"{FF0000}ERROR: {FFFFFF}You are not in a clan!");
+	}
+	else SendClientMessage(playerid,-1,"{FF0000}ERROR: {FFFFFF}Leaders can't leave clan! You can disband your clan or assign a new clan leader!");
+	return 1;
+}
+stock DisbandClan(clan_name[])
+{
+    if(!GetClanIsHave(clan_name)) return 1;
+	CallLocalFunction("OnDisbandClan", "s",clan_name);
+	new clanquery[300];
+	format(clanquery, sizeof(clanquery), "DELETE FROM clans WHERE clanname = '%s'", Clan_DB_Escape(clan_name));
+	db_query(Clan_Database,clanquery);
+	return 1;
+}
+stock PlayerDisbandClan(playerid)
+{
+	if(IsPlayerAnyClanMember(playerid))
+	{
+		if(GetPlayerClanRank(playerid) >= 6)
+		{
+			CallLocalFunction("OnPlayerDisbandClan", "is", playerid, GetPlayerClan(playerid));
+			new clanquery[300];
+			format(clanquery, sizeof(clanquery), "DELETE FROM clans WHERE clanname = '%s'", Clan_DB_Escape(GetPlayerClan(playerid)));
+			db_query(Clan_Database,clanquery);
+			return 1;
+		}
+		else SendClientMessage(playerid,-1,"{FF0000}ERROR: {FFFFFF}You are not clan leader!");
+	}
+	else SendClientMessage(playerid,-1,"{FF0000}ERROR: {FFFFFF}You are not in a clan!");
+	return 1;
+}
+stock ChangePlayerClanRank(clan_name[],playerid,rank)
+{
+    if(!GetClanIsHave(clan_name)) return 1;
+    if(!IsPlayerAnyClanMember(playerid)) return 1;
+    CallLocalFunction("OnClanChangePlayerRank", "sii",clan_name,playerid,rank);
+    new clanquery[300];
+	format(clanquery, sizeof(clanquery), "UPDATE members SET playerclanrank ='%i' WHERE playername = '%s'",rank, Clan_DB_Escape(Clan_GetName(playerid)));
+	db_free_result(db_query(Clan_Database,clanquery));
+	return 1;
+}
+stock PlayerChangePlayerClanRank(playerid, giveid, new_rank)
+{
+	if(IsPlayerAnyClanMember(playerid) == 1)
+	{
+		if(GetPlayerClanRank(playerid) >= 5)
+		{
+		    if(GetPlayerClanRank(playerid) < GetPlayerClanRank(giveid)) return SendClientMessage(playerid,-1,"{FF0000}ERROR:{FFFFFF}You can not change this player rank");
+		    if(new_rank > MAX_CLAN_RANKS || new_rank < 0) return SendClientMessage(playerid,-1,"{FF0000}ERROR:{FFFFFF}Clan rank is 0 to 6");
+			if(IsPlayerClanMember(giveid,GetPlayerClan(playerid)))
+			{
+				CallLocalFunction("OnPlayerChangePlayerRank", "iii", playerid, giveid, new_rank);
+				new clanquery[300];
+				format(clanquery, sizeof(clanquery), "UPDATE members SET playerclanrank ='%i' WHERE playername = '%s'", new_rank, Clan_DB_Escape(Clan_GetName(giveid)));
+				db_free_result(db_query(Clan_Database,clanquery));
+			}
+			else SendClientMessage(playerid,-1,"{FF0000}ERROR: {FFFFFF}Player is not in your clan!");
+		}
+		else SendClientMessage(playerid,-1,"{FF0000}ERROR: {FFFFFF}You must be an {00FF40}Officer {FFFFFF}or {00FF40}Clan Leader/Subleader {FFFFFF}to change members' clan rank!");
+	}
+	else SendClientMessage(playerid,-1,"{FF0000}ERROR: {FFFFFF}You are not part of a clan!");
+	return 1;
+}
+stock ChangeClanRankName(clan_name[],rank,newname[])
+{
+    if(!GetClanIsHave(clan_name)) return 1;
+    if(rank > MAX_CLAN_RANKS || rank < 0) return 1;
+    CallLocalFunction("OnClanChangeRankName","sis", clan_name,rank, newname);
+	new clanquery[300];
+	format(clanquery, sizeof(clanquery), "UPDATE clans SET clanrank%dname = '%s' WHERE clanname = '%s'", rank,newname, Clan_DB_Escape(clan_name));
+	db_free_result(db_query(Clan_Database,clanquery));
+	return 1;
+}
+stock PlayerChangeClanRankName(playerid,rank,newname[])
+{
+    if(IsPlayerAnyClanMember(playerid) == 1)
+	{
+		if(rank > MAX_CLAN_RANKS || rank < 0) return SendClientMessage(playerid,-1,"{FF0000}ERROR: {FFFFFF}rank form 0 to 6!");
+		if(GetPlayerClanRank(playerid) >= 5)
+		{
+		CallLocalFunction("OnPlayerChangeClanRankName","iis", playerid,rank, newname);
+		new clanquery[300];
+		format(clanquery, sizeof(clanquery), "UPDATE clans SET clanrank%dname = '%s' WHERE clanname = '%s'", rank,newname, Clan_DB_Escape(GetPlayerClan(playerid)));
+		db_free_result(db_query(Clan_Database,clanquery));
+		}
+		else SendClientMessage(playerid,-1,"{FF0000}ERROR: {FFFFFF}You must be an {00FF40}Officer {FFFFFF}or {00FF40}Clan Leader/Subleader {FFFFFF}to change clan's MOTD!");
+	}
+	else SendClientMessage(playerid,-1,"{FF0000}ERROR: {FFFFFF}You are not in a clan!");
+	return 1;
+}
+stock ChangeClanMOTD(clan_name[], new_motd[])
+{
+    if(!GetClanIsHave(clan_name)) return 1;
+    CallLocalFunction("OnClanChangeMOTD", "ss",clan_name, new_motd);
+    new clanquery[300];
+	format(clanquery, sizeof(clanquery), "UPDATE clans SET clanmotd = '%s' WHERE clanname = '%s'", new_motd, Clan_DB_Escape(clan_name));
+	db_free_result(db_query(Clan_Database,clanquery));
+	return 1;
+}
+stock PlayerChangeClanMOTD(playerid, new_motd[])
+{
+	if(IsPlayerAnyClanMember(playerid) == 1)
+	{
+		if(GetPlayerClanRank(playerid) >= 5)
+		{
+			CallLocalFunction("OnPlayerChangeClanMOTD", "is", playerid, new_motd);
+			new clanquery[300];
+			format(clanquery, sizeof(clanquery), "UPDATE clans SET clanmotd = '%s' WHERE clanname = '%s'", new_motd, Clan_DB_Escape(GetPlayerClan(playerid)));
+			db_free_result(db_query(Clan_Database,clanquery));
+			new msg_for_play[128];
+			format(msg_for_play,sizeof(msg_for_play),"{03F2FF}CLAN: {FFFFFF}You changed Message of The Day to {00FF40}%s", new_motd);
+			SendClientMessage(playerid,-1,msg_for_play);
+		}
+		else SendClientMessage(playerid,-1,"{FF0000}ERROR: {FFFFFF}You must be an {00FF40}Officer {FFFFFF}or {00FF40}Clan Leader/Subleader {FFFFFF}to change clan's MOTD!");
+	}
+	else SendClientMessage(playerid,-1,"{FF0000}ERROR: {FFFFFF}You are not in a clan!");
+	return 1;
+}
+stock ChangeClanDescription(clan_name[], new_description[])
+{
+    if(!GetClanIsHave(clan_name)) return 1;
+    CallLocalFunction("OnClanChangeDescription", "ss",clan_name, new_description);
+    new clanquery[300];
+	format(clanquery, sizeof(clanquery), "UPDATE clans SET clandes = '%s' WHERE clanname = '%s'", new_description, Clan_DB_Escape(clan_name));
+	db_free_result(db_query(Clan_Database,clanquery));
+	return 1;
+}
+stock PlayerChangeClanDescription(playerid, new_description[])
+{
+	if(IsPlayerAnyClanMember(playerid) == 1)
+	{
+		if(GetPlayerClanRank(playerid) >= 5)
+		{
+			CallLocalFunction("OnPlayerChangeClanDescription", "is", playerid, new_description);
+			new clanquery[300];
+			format(clanquery, sizeof(clanquery), "UPDATE clans SET clandes = '%s' WHERE clanname = '%s'", new_description, Clan_DB_Escape(GetPlayerClan(playerid)));
+			db_free_result(db_query(Clan_Database,clanquery));
+			new msg_for_play[128];
+			format(msg_for_play,sizeof(msg_for_play),"{03F2FF}CLAN: {FFFFFF}You changed clan's description to {00FF40}%s", new_description);
+			SendClientMessage(playerid,-1,msg_for_play);
+		}
+		else SendClientMessage(playerid,-1,"{FF0000}ERROR: {FFFFFF}You must be an {00FF40}Officer {FFFFFF}or {00FF40}Clan Leader/Subleader {FFFFFF}to change clan's description!");
+	}
+	else SendClientMessage(playerid,-1,"{FF0000}ERROR: {FFFFFF}You are not in a clan!");
+	return 1;
+}
+stock ChangeClanPassword(clan_name[], new_pass[])
+{
+    if(!GetClanIsHave(clan_name)) return 1;
+	CallLocalFunction("OnClanChangePassword", "ss", clan_name, new_pass);
+	new clanquery[300];
+	format(clanquery, sizeof(clanquery), "UPDATE clans SET clanpass = '%s' WHERE clanname = '%s'", new_pass, Clan_DB_Escape(clan_name));
+	db_free_result(db_query(Clan_Database,clanquery));
+	return 1;
+}
+stock PlayerChangeClanPassword(playerid, new_pass[])
+{
+	if(IsPlayerAnyClanMember(playerid) == 1)
+	{
+		if(GetPlayerClanRank(playerid) >= 3)
+		{
+			CallLocalFunction("OnPlayerChangeClanPassword", "is", playerid, new_pass);
+			new clanquery[300];
+			format(clanquery, sizeof(clanquery), "UPDATE clans SET clanpass = '%s' WHERE clanname = '%s'", new_pass, Clan_DB_Escape(GetPlayerClan(playerid)));
+			db_free_result(db_query(Clan_Database,clanquery));
+			new msg_for_play[128];
+			format(msg_for_play,sizeof(msg_for_play),"{03F2FF}CLAN: {FFFFFF}You changed clan's password to {00FF40}%s", new_pass);
+			SendClientMessage(playerid,-1,msg_for_play);
+		}
+		else SendClientMessage(playerid,-1,"{FF0000}ERROR: {FFFFFF}You must be {00FF40}Clan Leader/Subleader {FFFFFF}to change clan's password!");
+	}
+	else SendClientMessage(playerid,-1,"{FF0000}ERROR: {FFFFFF}You are not in a clan!");
+	return 1;
+}
+stock ChangeClanTag(clan_name[],new_tag[])
+{
+    if(!GetClanIsHave(clan_name)) return 1;
+	CallLocalFunction("OnClanChangeTag", "ss",clan_name, new_tag);
+	new clanquery[300];
+	format(clanquery, sizeof(clanquery), "UPDATE clans SET clantag = '%s' WHERE clanname = '%s'", new_tag, Clan_DB_Escape(clan_name));
+	db_free_result(db_query(Clan_Database,clanquery));
+	return 1;
+}
+stock PlayerChangeClanTag(playerid, new_tag[])
+{
+	if(IsPlayerAnyClanMember(playerid) == 1)
+	{
+		if(GetPlayerClanRank(playerid) >= 3)
+		{
+			CallLocalFunction("OnPlayerChangeClanTag", "is", playerid, new_tag);
+			new clanquery[300];
+			format(clanquery, sizeof(clanquery), "UPDATE clans SET clantag = '%s' WHERE clanname = '%s'", new_tag, Clan_DB_Escape(GetPlayerClan(playerid)));
+			db_free_result(db_query(Clan_Database,clanquery));
+			new msg_for_play[128];
+			format(msg_for_play,sizeof(msg_for_play),"{03F2FF}CLAN: {FFFFFF}You changed clan's tag to {00FF40}[%s]", new_tag);
+			SendClientMessage(playerid,-1,msg_for_play);
+		}
+		else SendClientMessage(playerid,-1,"{FF0000}ERROR: {FFFFFF}You must be {00FF40}Clan Leader/Subleader {FFFFFF}to change clan's tag!");
+	}
+	else SendClientMessage(playerid,-1,"{FF0000}ERROR: {FFFFFF}You are not in a clan!");
+	return 1;
+}
+
+stock IsPlayerAnyClanMember(playerid)
+{
+	new clanquery[128];
+	new DBResult: Result;
+	format(clanquery, sizeof(clanquery), "SELECT playername FROM members WHERE playername = '%s'",Clan_DB_Escape(Clan_GetName(playerid)));
+	Result = db_query(Clan_Database, clanquery);
+	new rows = db_num_rows(Result);
+	db_free_result(Result);
+	if(!rows) return 0;
+	else return 1;
+}
+
+stock IsPlayerClanMember(playerid, clan_name[])
+{
+	new clanquery[128];
+	new DBResult: Result;
+	format(clanquery, sizeof(clanquery), "SELECT clanname FROM members WHERE playername = '%s' AND clanname = '%s'", Clan_DB_Escape(Clan_GetName(playerid)), Clan_DB_Escape(clan_name));
+	Result = db_query(Clan_Database, clanquery);
+	new rows = db_num_rows(Result);
+	db_free_result(Result);
+	if(!rows) return 0;
+	else return 1;
+}
+
+stock GetPlayerClan(playerid)
+{
+	new clan_name[128];
+	new clanquery[128];
+	new DBResult: Result;
+	format(clanquery, sizeof(clanquery), "SELECT clanname FROM members WHERE playername = '%s' LIMIT 0,1", Clan_DB_Escape(Clan_GetName(playerid)));
+	Result = db_query(Clan_Database, clanquery);
+	db_get_field_assoc(Result, "clanname",clan_name,128);
+	db_free_result(Result);
+	return clan_name;
+}
+stock GetPlayerClanRankName(playerid)
+{
+	new rankname[128],string[128];
+	new DBResult: Result;
+	format(string,sizeof(string),"SELECT clanrank%dname FROM clans WHERE clanname = '%s' ",GetPlayerClanRank(playerid),GetPlayerClan(playerid));
+	Result = db_query(Clan_Database, string);
+	format(string,sizeof(string),"clanrank%dname",GetPlayerClanRank(playerid));
+	db_get_field_assoc(Result,string,rankname,128);
+	db_free_result(Result);
+	return rankname;
+}
+stock GetPlayerClanRank(playerid)
+{
+	new rank[10];
+	new clanquery[128];
+	new DBResult: Result;
+	format(clanquery, sizeof(clanquery), "SELECT playerclanrank FROM members WHERE playername = '%s'", Clan_DB_Escape(Clan_GetName(playerid)));
+	Result = db_query(Clan_Database, clanquery);
+	db_get_field_assoc(Result, "playerclanrank",rank,128);
+	db_free_result(Result);
+	return strval(rank);
+}
+
+stock GetClanMOTD(clan[])
+{
+	new clanquery[128];
+	new clan_motd[128];
+	new DBResult: Result;
+	format(clanquery, sizeof(clanquery), "SELECT clanmotd FROM clans WHERE clanname = '%s'", Clan_DB_Escape(clan));
+	Result = db_query(Clan_Database, clanquery);
+	db_get_field_assoc(Result, "clanmotd",clan_motd,128);
+	db_free_result(Result);
+	return clan_motd;
+}
+
+stock GetClanDescription(clan[])
+{
+	new clanquery[128];
+	new clan_desc[128];
+	new DBResult: Result;
+	format(clanquery, sizeof(clanquery), "SELECT clandes FROM clans WHERE clanname = '%s'", Clan_DB_Escape(clan));
+	Result = db_query(Clan_Database, clanquery);
+	db_get_field_assoc(Result, "clandes",clan_desc,128);
+	db_free_result(Result);
+	return clan_desc;
+}
+stock GetClanMembers(clan[])
+{
+	new clanquery[200];
+	new minfo[300],mreturn[300];
+	new string[300];
+	new rank[128];
+	new DBResult: Result;
+	format(clanquery, sizeof(clanquery), "SELECT * FROM members WHERE clanname = '%s'", Clan_DB_Escape(clan));
+	Result = db_query(Clan_Database, clanquery);
+	for(new i=0;i<db_num_rows(Result);i++)
+	{
+		db_get_field_assoc(Result,"playername",minfo,128);
+		db_get_field_assoc(Result,"playerclanrank",rank,128);
+		format(string,sizeof(string),"{FF0000}%s({FFFFFF}Rank:%d)\n\n",minfo,strval(rank));
+		strcat(mreturn, string);
+		db_next_row(Result);
+	}
+	db_free_result(Result);
+	return mreturn;
+}
+stock PlayerGetClanMembers(playerid,clan[])
+{
+	new clanquery[200];
+	new minfo[300],mreturn[300];
+	new string[300];
+	new rank[128];
+	new DBResult: Result;
+	format(clanquery, sizeof(clanquery), "SELECT * FROM members WHERE clanname = '%s'", Clan_DB_Escape(clan));
+	Result = db_query(Clan_Database, clanquery);
+	format(mreturn,sizeof(mreturn),"CLAN:{FF0000}%s\n{FFFFFF}Member:",clan);
+	SendClientMessage(playerid,-1,mreturn);
+	for(new i=0;i<db_num_rows(Result);i++)
+	{
+		db_get_field_assoc(Result,"playername",minfo,128);
+		db_get_field_assoc(Result,"playerclanrank",rank,128);
+		format(string,sizeof(string),"{FF0000}%s({FFFFFF}Rank:%d)\n",minfo,strval(rank));
+		SendClientMessage(playerid,-1,string);
+		db_next_row(Result);
+	}
+	db_free_result(Result);
+	return 1;
+}
+stock GetClanTag(clan[])
+{
+	new clanquery[128];
+	new clan_tag[128];
+	new DBResult: Result;
+	format(clanquery, sizeof(clanquery), "SELECT clantag FROM clans WHERE clanname = '%s'", Clan_DB_Escape(clan));
+	Result = db_query(Clan_Database, clanquery);
+	db_get_field_assoc(Result, "clantag",clan_tag,128);
+	db_free_result(Result);
+	return clan_tag;
+}
+
+stock GetClanPassword(clan[])
+{
+	new clanquery[128];
+	new clan_pass[128];
+	new DBResult: Result;
+	format(clanquery, sizeof(clanquery), "SELECT clanpass FROM clans WHERE clanname = '%s'",Clan_DB_Escape(clan));
+	Result = db_query(Clan_Database, clanquery);
+	db_get_field_assoc(Result, "clanpass",clan_pass,128);
+	db_free_result(Result);
+	return clan_pass;
+
+}
+
+stock UseClanTags(bool:use = true)
+{
+	use_tags = use;
+	return 1;
+}
+
+stock UseClanPasswords(bool:use = true)
+{
+	use_pass = use;
+	return 1;
+}
+
+stock SendMessageToClanMembers(playerid, color, msg[])
+{
+	for(new i = 0; i < MAX_PLAYERS; i++)
+	{
+		if(IsPlayerAnyClanMember(playerid) == 1)
+		{
+			if(IsPlayerConnected(i) == 1)
+			{
+				if(strcmp(GetPlayerClan(playerid), GetPlayerClan(i), true, 30) == 0)
+				{
+					SendClientMessage(i, color, msg);
+				}
+			}
+		}
+	}
+	return 1;
+}
+
+stock SendMessageToClanMembersEx(clan[], color, msg[])
+{
+	for(new i = 0; i < MAX_PLAYERS; i++)
+	{
+		if(IsPlayerAnyClanMember(i) == 1)
+		{
+			if(IsPlayerConnected(i) == 1)
+			{
+				if(strcmp(clan, GetPlayerClan(i), true, 30) == 0)
+				{
+					SendClientMessage(i, color, msg);
+				}
+			}
+		}
+	}
+	return 1;
+}
+stock Clan_DB_Escape(text[])
+{
+    new ret[ 80 * 2 ], ch, i, j;
+    while((ch = text[i++]) && j < sizeof(ret))
+    {
+        if(ch == '\'')
+        {
+            if(j < sizeof(ret) - 2)
+            {
+                ret[j++] = '\'';
+                ret[j++] = '\'';
+            }
+        }
+        else if(j < sizeof(ret))
+        {
+            ret[j++] = ch;
+        }
+        else
+        {
+            j++;
+        }
+    }
+    ret[sizeof(ret) - 1] = '\0';
+    return ret;
+}
+stock Clan_GetName(playerid)
+{
+	static name[MAX_PLAYER_NAME + 1];
+	GetPlayerName(playerid, name, sizeof(name));
+	return name;
+}
+stock GetClanIsHave(clan_name[])
+{
+	new clanquery3[128];
+	new DBResult: Result;
+	format(clanquery3, sizeof(clanquery3), "SELECT clanname FROM clans WHERE clanname = '%s'", Clan_DB_Escape(clan_name));
+	Result = db_query(Clan_Database,clanquery3);
+	new rows = db_num_rows(Result);
+	if(rows) return 1;
+	else return 0;
+}
