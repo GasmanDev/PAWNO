@@ -1,0 +1,245 @@
+//VINPURE
+
+#include <a_samp>
+#include <sscanf2>
+#include <zcmd>
+#include <clan>
+public OnFilterScriptInit()
+{
+	print("\n--------------------------------------");
+	print(" 			CLAN SYSTEM");
+	print("--------------------------------------\n");
+	return 1;
+}
+
+public OnFilterScriptExit()
+{
+	return 1;
+}
+public OnPlayerClanCreate(playerid, clan_name[])
+{
+	new string[128];
+	format(string,sizeof(string),"Clan %s has been created by %s",clan_name,GetName(playerid));
+	SendClientMessageToAll(-1,string);
+	print(string);
+	return 1;
+}
+/**********************************************************/
+public OnPlayerAddPlayerToClan(playerid, addid, clan_name[])
+{
+	new string[128];
+	format(string,sizeof(string),"%s has been add %s to clan %s",GetName(playerid),GetName(addid),clan_name);
+	SendClientMessageToAll(-1,string);
+	return 1;
+}
+
+public OnPlayerAddToClan(addid,clan_name[])
+{
+	new string[128];
+	format(string,sizeof(string),"CLAN:%s has add to clan %s",GetName(addid),clan_name);
+	SendClientMessageToAll(-1,string);
+	return 1;
+}
+/**********************************************************/
+public OnPlayerRemovePlayerFromClan(playerid, removeid, clan_name[])
+{
+	new string[128];
+	format(string,sizeof(string),"CLAN:%s has been removed %s from clan %s",GetName(playerid),GetName(removeid),clan_name);
+	SendClientMessageToAll(-1,string);
+	return 1;
+}
+public OnPlayerRemoveFromClan(removeid,clan_name[])
+{
+	new string[128];
+	format(string,sizeof(string),"CLAN:%s has removed from clan %s",GetName(removeid),clan_name);
+	SendClientMessageToAll(-1,string);
+	return 1;
+}
+/**********************************************************/
+public OnPlayerLeaveClan(playerid, clan_name[])
+{
+	new string[128];
+	format(string,sizeof(string),"CLAN:%s has leaved clan %s",GetName(playerid),clan_name);
+	SendClientMessageToAll(-1,string);
+	return 1;
+}
+/**********************************************************/
+public OnPlayerDisbandClan(playerid, clan_name[])
+{
+	new string[128];
+	format(string,sizeof(string),"CLAN:%s has been disband clan %s",GetName(playerid),clan_name);
+	SendClientMessageToAll(-1,string);
+	return 1;
+}
+public OnDisbandClan(clan_name[])
+{
+	return 1;
+}
+/**********************************************************/
+public OnPlayerChangeClanMOTD(playerid, new_motd[])
+{
+	new string[128];
+	format(string,sizeof(string),"CLAN:%s has been changed motd %s from clan %s",GetName(playerid),new_motd,GetPlayerClan(playerid));
+	SendClientMessageToAll(-1,string);
+	return 1;
+}
+public OnClanChangeMOTD(clan_name[], new_motd[])
+{
+	new string[128];
+	format(string,sizeof(string),"CLAN %s has changed motd to %s",clan_name,new_motd);
+	SendClientMessageToAll(-1,string);
+	return 1;
+}
+/**********************************************************/
+public OnPlayerChangeClanDescription(playerid, new_description[])
+{
+	return 1;
+}
+public OnClanChangeDescription(clan_name[], new_description[])
+{
+	return 1;
+}
+/**********************************************************/
+public OnPlayerChangeClanPassword(playerid, new_pass[])
+{
+	return 1;
+}
+public OnClanChangePassword(clan_name[], new_pass[])
+{
+	return 1;
+}
+/**********************************************************/
+public OnPlayerChangeClanTag(playerid, new_tag[])
+{
+	return 1;
+}
+public OnClanChangeTag(clan_name[], new_tag[])
+{
+	return 1;
+}
+/**********************************************************/
+public OnPlayerChangePlayerRank(playerid, giveid, new_rank)
+{
+	new string[128];
+	format(string,sizeof(string),"CLAN:%s has been changed rank player %s to %d",GetName(playerid),GetName(giveid),new_rank);
+	SendClientMessageToAll(-1,string);
+	return 1;
+}
+public OnClanChangePlayerRank(clan_name[], giveid, new_rank)
+{
+	new string[128];
+	format(string,sizeof(string),"CLAN:%s has been changed rank player %s to %d",clan_name,GetName(giveid),new_rank);
+	SendClientMessageToAll(-1,string);
+	return 1;
+}
+/**********************************************************/
+public OnPlayerChangeClanRankName(playerid,rank,newname[])
+{
+	new string[128];
+	format(string,sizeof(string),"CLAN:%s has been changed rank %d name to %s",GetName(playerid),rank,newname);
+	SendClientMessageToAll(-1,string);
+	return 1;
+}
+public OnClanChangeRankName(clan_name[],rank,newname[])
+{
+	new string[128];
+	format(string,sizeof(string),"CLAN %s has been change rank %d name to %s",clan_name,rank,newname);
+	SendClientMessageToAll(-1,string);
+	return 1;
+}
+CMD:clandisband(playerid,params[])
+{
+     return PlayerDisbandClan(playerid);
+}
+
+CMD:clanmember(playerid,params[])
+{
+    if(IsPlayerAnyClanMember(playerid) == 1)
+	{
+	    new string[1024];
+	    format(string,sizeof(string),"%s",GetClanMembers(GetPlayerClan(playerid)));
+	    SendClientMessage(playerid,-1,string);
+    }
+	return 1;
+}
+CMD:pclanmember(playerid,params[])
+{
+    if(IsPlayerAnyClanMember(playerid) == 1)
+	{
+	    PlayerGetClanMembers(playerid,GetPlayerClan(playerid));
+    }
+	return 1;
+}
+CMD:cclan(playerid,params[])
+{
+     new cname[30], ctag[30], cpass[30];
+     if(sscanf(params, "s[30]s[30]s[30]", cname, ctag, cpass)) return SendClientMessage(playerid,-1,"USAGE: /cclan <clan-name> <clan-tag> <clan-pass>");
+     CreateClan(playerid, cname, ctag, cpass, "", "","Newbie","Member","ClanMember","Master","Legend","Subleader","Leader");
+     return 1;
+}
+CMD:addclanplayer(playerid,params[])
+{
+     new target;
+     if(sscanf(params, "u", target)) return SendClientMessage(playerid,-1,"USAGE: /addplayer <playerid>");
+     PlayerAddPlayerToClan(playerid, target);
+     return 1;
+}
+CMD:removeclanplayer(playerid,params[])
+{
+     new target;
+     if(sscanf(params, "u", target)) return SendClientMessage(playerid,-1,"USAGE: /addplayer <playerid>");
+     PlayerRemovePlayerFromClan(playerid, target);
+     return 1;
+}
+CMD:cleave(playerid,params[])
+{
+     return LeaveClan(playerid);
+}
+CMD:changerankname(playerid,params[])
+{
+    new rank,rankname[128];
+    if(sscanf(params, "is[128]", rank,rankname)) return SendClientMessage(playerid,-1,"USAGE: /changerankname <rank> <rankname>");
+    PlayerChangeClanRankName(playerid,rank,rankname);
+    return 1;
+}
+CMD:changerank(playerid,params[])
+{
+     new target, crank;
+     if(sscanf(params, "ui", target, crank)) return SendClientMessage(playerid,-1,"USAGE: /changerank <playerid> <rank>");
+     PlayerChangePlayerClanRank(playerid, target, crank);
+     return 1;
+}
+CMD:changemotd(playerid,params[])
+{
+     new cmotd[128];
+     if(sscanf(params, "s[100]", cmotd)) return SendClientMessage(playerid,-1,"USAGE: /changerank <new-motd>");
+     PlayerChangeClanMOTD(playerid, cmotd);
+     return 1;
+}
+CMD:changedes(playerid,params[])
+{
+     new cdes[200];
+     if(sscanf(params, "s[200]", cdes)) return SendClientMessage(playerid,-1,"USAGE: /changedes <new-description>");
+     PlayerChangeClanDescription(playerid, cdes);
+     return 1;
+}
+CMD:changepass(playerid,params[])
+{
+     new cpass[20];
+     if(sscanf(params, "s[20]", cpass)) return SendClientMessage(playerid,-1,"USAGE: /changepass <new-password>");
+     PlayerChangeClanPassword(playerid, cpass);
+     return 1;
+}
+CMD:changetag(playerid,params[])
+{
+     new tag[10];
+     if(sscanf(params, "s[10]", tag)) return SendClientMessage(playerid,-1,"USAGE: /changetag <new-tag>");
+     PlayerChangeClanTag(playerid, tag);
+     return 1;
+}
+stock GetName(playerid)
+{
+	static name[MAX_PLAYER_NAME + 1];
+	GetPlayerName(playerid, name, sizeof(name));
+	return name;
+}
