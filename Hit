@@ -1,0 +1,73 @@
+#include <a_samp>
+#include <zcmd>
+new PlayerText:TextHit[2];
+new TimeHit[MAX_PLAYERS];
+public OnFilterScriptInit()
+{
+	print("\n--------------------------------------");
+	print("Hitmaker :)");
+	print("--------------------------------------\n");
+
+	return 1;
+}
+public OnPlayerTakeDamage(playerid, issuerid, Float: amount, weaponid, bodypart)
+{
+    if(issuerid != INVALID_PLAYER_ID) // If not self-inflicted
+    {
+        
+		if(weaponid > 0 && playerid == GetPlayerTargetPlayer(issuerid))
+		{
+		ShowHitMarket(issuerid,amount);
+		}
+    }
+    return 1;
+}
+public OnPlayerConnect(playerid)
+{
+    TextHit[0] = CreatePlayerTextDraw(playerid,324.000000, 164.000000, "particle:lockon");
+	PlayerTextDrawBackgroundColor(playerid,TextHit[0], 255);
+	PlayerTextDrawFont(playerid,TextHit[0], 4);
+	PlayerTextDrawLetterSize(playerid,TextHit[0], 0.500000, 1.000000);
+	PlayerTextDrawColor(playerid,TextHit[0], -1);
+	PlayerTextDrawSetOutline(playerid,TextHit[0], 0);
+	PlayerTextDrawSetProportional(playerid,TextHit[0], 1);
+	PlayerTextDrawSetShadow(playerid,TextHit[0], 1);
+	PlayerTextDrawUseBox(playerid,TextHit[0], 1);
+	PlayerTextDrawBoxColor(playerid,TextHit[0], 255);
+	PlayerTextDrawTextSize(playerid,TextHit[0], 30.000000, 30.000000);
+	PlayerTextDrawSetSelectable(playerid,TextHit[0], 0);
+
+	TextHit[1] = CreatePlayerTextDraw(playerid,355.000000, 175.000000, "");
+	PlayerTextDrawBackgroundColor(playerid,TextHit[1], 0);
+	PlayerTextDrawFont(playerid,TextHit[1], 2);
+	PlayerTextDrawLetterSize(playerid,TextHit[1], 0.170000, 0.799999);
+	PlayerTextDrawColor(playerid,TextHit[1], -16776961);
+	PlayerTextDrawSetOutline(playerid,TextHit[1], 1);
+	PlayerTextDrawSetProportional(playerid,TextHit[1], 1);
+	PlayerTextDrawSetSelectable(playerid,TextHit[1], 0);
+	return 1;
+}
+CMD:w(playerid,params[])
+{
+	GivePlayerWeapon(playerid,31,9999999999);
+	return 1;
+}
+stock ShowHitMarket(playerid,Float:dmg)
+{
+	new string[64];
+	PlayerPlaySound(playerid, 17802, 0.0, 0.0, 0.0);
+	format(string,sizeof(string),"-%0.1f",dmg);
+	PlayerTextDrawShow(playerid,TextHit[0]);
+	PlayerTextDrawSetString(playerid,TextHit[1],string);
+	PlayerTextDrawShow(playerid,TextHit[1]);
+	if(TimeHit[playerid]) KillTimer(TimeHit[playerid]);
+	TimeHit[playerid] = SetTimerEx("HideHitMarket",1000,0,"i",playerid);
+	return 1;
+}
+forward HideHitMarket(playerid);
+public HideHitMarket(playerid)
+{
+    PlayerTextDrawHide(playerid,TextHit[0]);
+    PlayerTextDrawHide(playerid,TextHit[1]);
+	return 1;
+}
